@@ -6,6 +6,7 @@ from data import (
 )
 from helpers import generate_user_data
 
+
 @pytest.fixture
 def api_client():
     """Базовый клиент для API запросов"""
@@ -32,49 +33,72 @@ def api_client():
 
     return APIClient()
 
+
 @pytest.fixture
 def test_user_data():
-    """Создает уникальные данные пользователя и удаляет его после теста"""
-    user_data = generate_user_data()
-    yield user_data
+    """Генерирует уникальные данные пользователя"""
+    return generate_user_data()
+
 
 @pytest.fixture
 def created_user(api_client):
-    """Создает пользователя в системе и возвращает его данные с токенами"""
+    """
+    Создает пользователя в системе и возвращает его данные с токенами.
+    Если создание не удалось, фикстура вернет response с ошибкой,
+    и тест сам обработает эту ситуацию.
+    """
     user_data = generate_user_data()
     
     response = api_client.post(AUTH_REGISTER_ENDPOINT, data=user_data)
-    assert response.status_code == 200, f"Не удалось создать пользователя: {response.text}"
     
-    user_data["accessToken"] = response.json().get("accessToken")
-    user_data["refreshToken"] = response.json().get("refreshToken")
+    # Сохраняем response в данных, чтобы тест мог проверить статус
+    user_data["_registration_response"] = response
+    
+    if response.status_code == 200:
+        json_data = response.json()
+        user_data["accessToken"] = json_data.get("accessToken")
+        user_data["refreshToken"] = json_data.get("refreshToken")
+    else:
+        # Если регистрация не удалась, токенов нет
+        user_data["accessToken"] = None
+        user_data["refreshToken"] = None
     
     yield user_data
     
-    # Удаление пользователя после теста
-    if "accessToken" in user_data and user_data["accessToken"]:
-        headers = {"Authorization": user_data["accessToken"]}
-        api_client.delete(AUTH_USER_ENDPOINT, headers=headers)
+    # Удаление пользователя после теста (только если создание было успешным)
+    if user_data.get("accessToken"):
+        try:
+            headers = {"Authorization": user_data["accessToken"]}
+            api_client.delete(AUTH_USER_ENDPOINT, headers=headers)
+        except Exception:
+            pass  # Игнорируем ошибки при удалении
+
 
 @pytest.fixture
 def authorized_headers(created_user):
-    """Возвращает заголовки с авторизационным токеном"""
-    return {"Authorization": created_user["accessToken"]}
+    """
+    Возвращает заголовки с авторизационным токеном.
+    Если токена нет, вернет пустой словарь.
+    """
+    if created_user.get("accessToken"):
+        return {"Authorization": created_user["accessToken"]}
+    return {}
+
 
 @pytest.fixture
 def ingredients(api_client):
-    """Возвращает реальные ингредиенты с сервера"""
+    """
+    Возвращает реальные ингредиенты с сервера.
+    Фикстура НЕ содержит assert.
+    """
     response = api_client.get(INGREDIENTS_ENDPOINT)
+    
     if response.status_code == 200:
         data = response.json()
         if data.get("success") and data.get("data"):
-            # Берем первые два ингредиента
             ingredients = [item["_id"] for item in data["data"][:2]]
             if ingredients:
                 return ingredients
     
-    # Если не удалось получить ингредиенты, используем запасные
-    return [
-        "60d3b41abdacab0026a733c6",  # Булка
-        "60d3b41abdacab0026a733c7"   # Соус
-    ]
+    # fallback: возвращаем список, который точно вызовет ошибку, если что-то пошло не так
+    return []

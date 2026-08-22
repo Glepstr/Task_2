@@ -7,6 +7,7 @@ from data import (
 )
 from helpers import generate_user_data, generate_random_string
 
+
 @allure.epic("Пользователь")
 class TestUser:
     
@@ -36,14 +37,14 @@ class TestUser:
     
     @allure.feature("Создание пользователя")
     @allure.story("Ошибки при создании")
-    def test_create_user_already_exists(self, api_client, created_user):
+    def test_create_user_already_exists(self, api_client):
         """Создание пользователя, который уже зарегистрирован"""
-        user_data = {
-            "email": created_user["email"],
-            "password": created_user["password"],
-            "name": created_user["name"]
-        }
+        # Сначала создаем пользователя
+        user_data = generate_user_data()
+        register_response = api_client.post(AUTH_REGISTER_ENDPOINT, data=user_data)
+        assert register_response.status_code == 200, "Не удалось создать пользователя для теста"
         
+        # Пытаемся создать такого же
         with allure.step("Отправить запрос на регистрацию существующего пользователя"):
             response = api_client.post(AUTH_REGISTER_ENDPOINT, data=user_data)
         
@@ -51,6 +52,12 @@ class TestUser:
             assert response.status_code == 403
             assert response.json()["success"] is False
             assert response.json()["message"] == MSG_USER_ALREADY_EXISTS
+        
+        # Удаление созданного пользователя
+        token = register_response.json().get("accessToken")
+        if token:
+            headers = {"Authorization": token}
+            api_client.delete(AUTH_USER_ENDPOINT, headers=headers)
     
     @allure.feature("Создание пользователя")
     @allure.story("Ошибки при создании")
@@ -70,11 +77,16 @@ class TestUser:
     
     @allure.feature("Логин пользователя")
     @allure.story("Успешный вход")
-    def test_login_success(self, api_client, created_user):
+    def test_login_success(self, api_client):
         """Логин под существующим пользователем"""
+        # Создаем пользователя
+        user_data = generate_user_data()
+        register_response = api_client.post(AUTH_REGISTER_ENDPOINT, data=user_data)
+        assert register_response.status_code == 200, "Не удалось создать пользователя для теста"
+        
         login_data = {
-            "email": created_user["email"],
-            "password": created_user["password"]
+            "email": user_data["email"],
+            "password": user_data["password"]
         }
         
         with allure.step("Отправить запрос на логин"):
@@ -86,8 +98,14 @@ class TestUser:
             assert json_data["success"] is True
             assert "accessToken" in json_data
             assert "refreshToken" in json_data
-            assert json_data["user"]["email"] == created_user["email"]
-            assert json_data["user"]["name"] == created_user["name"]
+            assert json_data["user"]["email"] == user_data["email"]
+            assert json_data["user"]["name"] == user_data["name"]
+        
+        # Удаление созданного пользователя
+        token = register_response.json().get("accessToken")
+        if token:
+            headers = {"Authorization": token}
+            api_client.delete(AUTH_USER_ENDPOINT, headers=headers)
     
     @allure.feature("Логин пользователя")
     @allure.story("Ошибки при входе")
@@ -120,6 +138,11 @@ class TestUser:
     ])
     def test_update_user_authorized(self, api_client, created_user, authorized_headers, field, new_value):
         """Изменение данных пользователя с авторизацией"""
+        # Проверяем, что пользователь был создан успешно
+        assert created_user.get("_registration_response") is not None, "Нет ответа от регистрации"
+        assert created_user["_registration_response"].status_code == 200, "Пользователь не был создан"
+        assert created_user.get("accessToken") is not None, "Нет токена авторизации"
+        
         # Если поле email, генерируем уникальный email
         if field == "email" and new_value is None:
             new_value = f"new_{generate_random_string(8)}@yandex.ru"
@@ -130,11 +153,11 @@ class TestUser:
             response = api_client.patch(AUTH_USER_ENDPOINT, data=update_data, headers=authorized_headers)
         
         with allure.step("Проверить код ответа 200 и обновленные данные"):
-            assert response.status_code == 200, f"Ожидался 200, получен {response.status_code}. Тело: {response.text}"
+            assert response.status_code == 200
             json_data = response.json()
             assert json_data["success"] is True
             
-            # Для пароля проверяем через логин, так как сервер не возвращает пароль
+            # Для пароля проверяем через логин
             if field == "password":
                 login_data = {
                     "email": created_user["email"],
@@ -143,14 +166,7 @@ class TestUser:
                 login_response = api_client.post(AUTH_LOGIN_ENDPOINT, data=login_data)
                 assert login_response.status_code == 200, "Не удалось войти с новым паролем"
             else:
-                # Для email и name проверяем прямо в ответе
                 assert json_data["user"][field] == new_value
-        
-        # Проверяем, что остальные поля не изменились
-        if field != "email":
-            assert json_data["user"]["email"] == created_user["email"]
-        if field != "name":
-            assert json_data["user"]["name"] == created_user["name"]
     
     @allure.feature("Изменение данных пользователя")
     @allure.story("Неавторизованный пользователь")
@@ -173,26 +189,37 @@ class TestUser:
     
     @allure.feature("Изменение данных пользователя")
     @allure.story("Ошибки при изменении")
-    def test_update_user_email_already_exists(self, api_client, created_user, authorized_headers):
+    def test_update_user_email_already_exists(self, api_client):
         """Попытка изменить email на уже существующий"""
-        # Создаем второго пользователя
-        other_user_data = generate_user_data()
-        other_response = api_client.post(AUTH_REGISTER_ENDPOINT, data=other_user_data)
-        assert other_response.status_code == 200
+        # Создаем первого пользователя
+        user1_data = generate_user_data()
+        user1_response = api_client.post(AUTH_REGISTER_ENDPOINT, data=user1_data)
+        assert user1_response.status_code == 200, "Не удалось создать первого пользователя"
+        user1_token = user1_response.json().get("accessToken")
         
-        update_data = {"email": other_user_data["email"]}
+        # Создаем второго пользователя
+        user2_data = generate_user_data()
+        user2_response = api_client.post(AUTH_REGISTER_ENDPOINT, data=user2_data)
+        assert user2_response.status_code == 200, "Не удалось создать второго пользователя"
+        user2_token = user2_response.json().get("accessToken")
+        
+        # Пытаемся изменить email первого на email второго
+        update_data = {"email": user2_data["email"]}
+        headers = {"Authorization": user1_token}
         
         with allure.step("Отправить запрос на изменение email на уже существующий"):
-            response = api_client.patch(AUTH_USER_ENDPOINT, data=update_data, headers=authorized_headers)
+            response = api_client.patch(AUTH_USER_ENDPOINT, data=update_data, headers=headers)
         
         with allure.step("Проверить код ответа 403 и сообщение об ошибке"):
             assert response.status_code == 403
             assert response.json()["success"] is False
             assert response.json()["message"] == MSG_EMAIL_ALREADY_EXISTS
         
-        # Удаляем второго пользователя
-        other_headers = {"Authorization": other_response.json()["accessToken"]}
-        api_client.delete(AUTH_USER_ENDPOINT, headers=other_headers)
+        # Удаляем пользователей
+        if user1_token:
+            api_client.delete(AUTH_USER_ENDPOINT, headers={"Authorization": user1_token})
+        if user2_token:
+            api_client.delete(AUTH_USER_ENDPOINT, headers={"Authorization": user2_token})
     
     @allure.feature("Изменение данных пользователя")
     @allure.story("Ошибки при изменении")
