@@ -24,23 +24,27 @@ def test_user_data():
 
 
 @pytest.fixture
-def created_user(api_client):
+def authorized_user(api_client):
     """
-    Создает пользователя в системе и возвращает его данные с токенами.
-    После теста удаляет пользователя (даже если тест упал).
+    Создает авторизованного пользователя и возвращает его токен и данные.
+    Используется в тестах, где требуется авторизованный пользователь как предусловие.
     """
-    # Создаем пользователя
-    response, user_data = create_user(api_client)
+    user_data = generate_user_data()
+    response, _ = create_user(api_client, user_data)
     
-    # Сохраняем response для проверок в тесте
-    user_data["_registration_response"] = response
-    user_data["_access_token"] = response.json().get("accessToken") if response.status_code == 200 else None
+    # Гарантируем, что пользователь создан (это предусловие)
+    assert response.status_code == 200, "Не удалось создать пользователя для теста"
     
-    yield user_data
+    token = response.json().get("accessToken")
     
-    # Постусловие: удаляем пользователя после теста
-    if user_data.get("_access_token"):
-        delete_user(api_client, user_data["_access_token"])
+    yield {
+        "user_data": user_data,
+        "token": token
+    }
+    
+    # Очистка после теста
+    if token:
+        delete_user(api_client, token)
 
 
 @pytest.fixture
