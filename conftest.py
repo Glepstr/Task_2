@@ -15,32 +15,25 @@ def api_client():
 
 
 @pytest.fixture
-def test_user_data():
-    """
-    Возвращает сгенерированные данные пользователя.
-    Используем return, так как нет cleanup после теста.
-    """
-    return generate_user_data()
-
-
-@pytest.fixture
 def authorized_user(api_client):
     """
     Создает авторизованного пользователя и возвращает его токен и данные.
-    Используется в тестах, где требуется авторизованный пользователь как предусловие.
+    ВНИМАНИЕ: фикстура НЕ содержит assert - проверки выполняются в тестах.
+    Если создание не удалось, тест сам обработает эту ситуацию.
     """
     user_data = generate_user_data()
     response, _ = create_user(api_client, user_data)
     
-    # Гарантируем, что пользователь создан (это предусловие)
-    assert response.status_code == 200, "Не удалось создать пользователя для теста"
+    token = response.json().get("accessToken") if response.status_code == 200 else None
     
-    token = response.json().get("accessToken")
-    
-    yield {
+    # Возвращаем response в данные, чтобы тест мог проверить статус
+    result = {
         "user_data": user_data,
-        "token": token
+        "token": token,
+        "_registration_response": response
     }
+    
+    yield result
     
     # Очистка после теста
     if token:

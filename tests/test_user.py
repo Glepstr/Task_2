@@ -47,7 +47,10 @@ class TestUser:
         Создание пользователя, который уже зарегистрирован.
         Предусловие: существующий пользователь (фикстура authorized_user)
         """
-        # Берем данные существующего пользователя из фикстуры
+        # Проверяем, что пользователь создан успешно
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         existing_user_data = authorized_user["user_data"]
         
         with allure.step("Отправить запрос на регистрацию существующего пользователя"):
@@ -111,6 +114,9 @@ class TestUser:
         Логин под существующим пользователем.
         Предусловие: существующий пользователь (фикстура authorized_user)
         """
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         user_data = authorized_user["user_data"]
         
         with allure.step("Отправить запрос на логин"):
@@ -145,6 +151,9 @@ class TestUser:
         Логин с неверным паролем.
         Предусловие: существующий пользователь (фикстура authorized_user)
         """
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         user_data = authorized_user["user_data"]
         
         with allure.step("Отправить запрос на логин с неверным паролем"):
@@ -163,6 +172,9 @@ class TestUser:
         Изменение email авторизованным пользователем.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         token = authorized_user["token"]
         new_email = f"new_{generate_random_string(8)}@yandex.ru"
         update_data = {"email": new_email}
@@ -184,6 +196,9 @@ class TestUser:
         Изменение пароля авторизованным пользователем.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         token = authorized_user["token"]
         user_data = authorized_user["user_data"]
         new_password = "new_password_123"
@@ -208,6 +223,9 @@ class TestUser:
         Изменение имени авторизованным пользователем.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         token = authorized_user["token"]
         new_name = "NewUserName"
         update_data = {"name": new_name}
@@ -271,7 +289,9 @@ class TestUser:
         Попытка изменить email на уже существующий.
         Предусловие: два пользователя (один из фикстуры, второй создается в тесте)
         """
-        # Первый пользователь из фикстуры
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         token1 = authorized_user["token"]
         user2_data = generate_user_data()
         

@@ -13,6 +13,9 @@ class TestOrdersList:
         Получение заказов пользователя с авторизацией.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         token = authorized_user["token"]
         
         with allure.step("Отправить запрос на получение заказов пользователя"):

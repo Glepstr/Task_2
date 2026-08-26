@@ -13,6 +13,10 @@ class TestOrder:
         Создание заказа с ингредиентами авторизованным пользователем.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
+        # Проверяем, что пользователь создан успешно
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         token = authorized_user["token"]
         
         with allure.step("Отправить запрос на создание заказа"):
@@ -33,6 +37,9 @@ class TestOrder:
         Создание заказа без ингредиентов авторизованным пользователем.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         token = authorized_user["token"]
         
         with allure.step("Отправить запрос на создание заказа без ингредиентов"):
@@ -50,6 +57,9 @@ class TestOrder:
         Создание заказа с неверным хешем ингредиентов.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
+        assert authorized_user["_registration_response"].status_code == 200
+        assert authorized_user["token"] is not None
+        
         token = authorized_user["token"]
         
         with allure.step("Отправить запрос на создание заказа с неверным хешем"):
