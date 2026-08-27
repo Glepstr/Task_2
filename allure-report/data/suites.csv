@@ -1,0 +1,56 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"Создание пользователя без email","296","test_create_user_missing_email","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"Изменение имени без авторизации","286","test_update_user_name_unauthorized","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Изменение email авторизованным пользователем.
+Предусловие: авторизованный пользователь (фикстура authorized_user)
+","22","test_update_user_email_authorized","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"Создание пользователя без password","326","test_create_user_missing_password","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Создание заказа с ингредиентами авторизованным пользователем.
+Предусловие: авторизованный пользователь (фикстура authorized_user)
+","3678","test_create_order_authorized_with_ingredients","tests","2026-08-25","passed","2026-08-25","TestOrder","test_order","",""
+"Получение заказов пользователя без авторизации","298","test_get_user_orders_unauthorized","tests","2026-08-25","passed","2026-08-25","TestOrdersList","test_orders_list","",""
+"Изменение email без авторизации","293","test_update_user_email_unauthorized","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Изменение имени авторизованным пользователем.
+Предусловие: авторизованный пользователь (фикстура authorized_user)
+","20","test_update_user_name_authorized","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Создание пользователя, который уже зарегистрирован.
+Предусловие: существующий пользователь (фикстура authorized_user)
+","19","test_create_user_already_exists","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Создание заказа с неверным хешем ингредиентов.
+Предусловие: авторизованный пользователь (фикстура authorized_user)
+","20","test_create_order_authorized_invalid_hash","tests","2026-08-25","passed","2026-08-25","TestOrder","test_order","",""
+"Изменение пароля без авторизации","290","test_update_user_password_unauthorized","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"Создание уникального пользователя - успешный сценарий","1043","test_create_user_success","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"Логин с неверным email","290","test_login_invalid_email","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Логин под существующим пользователем.
+Предусловие: существующий пользователь (фикстура authorized_user)
+","97","test_login_success","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"Создание заказа с ингредиентами неавторизованным пользователем","24","test_create_order_unauthorized_with_ingredients","tests","2026-08-25","passed","2026-08-25","TestOrder","test_order","",""
+"Создание заказа без ингредиентов неавторизованным пользователем","298","test_create_order_unauthorized_without_ingredients","tests","2026-08-25","passed","2026-08-25","TestOrder","test_order","",""
+"Создание пользователя без name","287","test_create_user_missing_name","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Попытка изменить email на уже существующий.
+Предусловие: два пользователя (один из фикстуры, второй создается в тесте)
+","788","test_update_user_email_already_exists","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Создание заказа без ингредиентов авторизованным пользователем.
+Предусловие: авторизованный пользователь (фикстура authorized_user)
+","19","test_create_order_authorized_without_ingredients","tests","2026-08-25","passed","2026-08-25","TestOrder","test_order","",""
+"
+Изменение пароля авторизованным пользователем.
+Предусловие: авторизованный пользователь (фикстура authorized_user)
+","197","test_update_user_password_authorized","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Логин с неверным паролем.
+Предусловие: существующий пользователь (фикстура authorized_user)
+","96","test_login_invalid_password","tests","2026-08-25","passed","2026-08-25","TestUser","test_user","",""
+"
+Получение заказов пользователя с авторизацией.
+Предусловие: авторизованный пользователь (фикстура authorized_user)
+","539","test_get_user_orders_authorized","tests","2026-08-25","passed","2026-08-25","TestOrdersList","test_orders_list","",""
