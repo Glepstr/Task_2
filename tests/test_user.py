@@ -19,7 +19,10 @@ class TestUser:
     @allure.feature("Создание пользователя")
     @allure.story("Успешное создание")
     def test_create_user_success(self, api_client):
-        """Создание уникального пользователя - успешный сценарий"""
+        """
+        Создание уникального пользователя - успешный сценарий.
+        ЕДИНСТВЕННЫЙ тест, где проверяется регистрация.
+        """
         user_data = generate_user_data()
         
         with allure.step("Отправить запрос на регистрацию"):
@@ -47,10 +50,6 @@ class TestUser:
         Создание пользователя, который уже зарегистрирован.
         Предусловие: существующий пользователь (фикстура authorized_user)
         """
-        # Проверяем, что пользователь создан успешно
-        assert authorized_user["_registration_response"].status_code == 200
-        assert authorized_user["token"] is not None
-        
         existing_user_data = authorized_user["user_data"]
         
         with allure.step("Отправить запрос на регистрацию существующего пользователя"):
@@ -60,7 +59,6 @@ class TestUser:
             assert response.status_code == 403
             assert response.json()["success"] is False
             assert response.json()["message"] == MSG_USER_ALREADY_EXISTS
-        # Очистка выполняется в фикстуре authorized_user
     
     @allure.feature("Создание пользователя")
     @allure.story("Ошибки при создании")
@@ -114,9 +112,6 @@ class TestUser:
         Логин под существующим пользователем.
         Предусловие: существующий пользователь (фикстура authorized_user)
         """
-        assert authorized_user["_registration_response"].status_code == 200
-        assert authorized_user["token"] is not None
-        
         user_data = authorized_user["user_data"]
         
         with allure.step("Отправить запрос на логин"):
@@ -130,7 +125,6 @@ class TestUser:
             assert "refreshToken" in json_data
             assert json_data["user"]["email"] == user_data["email"]
             assert json_data["user"]["name"] == user_data["name"]
-        # Очистка выполняется в фикстуре authorized_user
     
     @allure.feature("Логин пользователя")
     @allure.story("Ошибки при входе")
@@ -151,9 +145,6 @@ class TestUser:
         Логин с неверным паролем.
         Предусловие: существующий пользователь (фикстура authorized_user)
         """
-        assert authorized_user["_registration_response"].status_code == 200
-        assert authorized_user["token"] is not None
-        
         user_data = authorized_user["user_data"]
         
         with allure.step("Отправить запрос на логин с неверным паролем"):
@@ -163,7 +154,6 @@ class TestUser:
             assert response.status_code == 401
             assert response.json()["success"] is False
             assert response.json()["message"] == MSG_INCORRECT_CREDENTIALS
-        # Очистка выполняется в фикстуре authorized_user
     
     @allure.feature("Изменение данных пользователя")
     @allure.story("Авторизованный пользователь")
@@ -172,9 +162,6 @@ class TestUser:
         Изменение email авторизованным пользователем.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
-        assert authorized_user["_registration_response"].status_code == 200
-        assert authorized_user["token"] is not None
-        
         token = authorized_user["token"]
         new_email = f"new_{generate_random_string(8)}@yandex.ru"
         update_data = {"email": new_email}
@@ -187,7 +174,6 @@ class TestUser:
             json_data = response.json()
             assert json_data["success"] is True
             assert json_data["user"]["email"] == new_email
-        # Очистка выполняется в фикстуре authorized_user
     
     @allure.feature("Изменение данных пользователя")
     @allure.story("Авторизованный пользователь")
@@ -196,9 +182,6 @@ class TestUser:
         Изменение пароля авторизованным пользователем.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
-        assert authorized_user["_registration_response"].status_code == 200
-        assert authorized_user["token"] is not None
-        
         token = authorized_user["token"]
         user_data = authorized_user["user_data"]
         new_password = "new_password_123"
@@ -214,7 +197,6 @@ class TestUser:
         with allure.step("Проверить, что новый пароль работает"):
             login_response = login_user(api_client, user_data["email"], new_password)
             assert login_response.status_code == 200
-        # Очистка выполняется в фикстуре authorized_user
     
     @allure.feature("Изменение данных пользователя")
     @allure.story("Авторизованный пользователь")
@@ -223,9 +205,6 @@ class TestUser:
         Изменение имени авторизованным пользователем.
         Предусловие: авторизованный пользователь (фикстура authorized_user)
         """
-        assert authorized_user["_registration_response"].status_code == 200
-        assert authorized_user["token"] is not None
-        
         token = authorized_user["token"]
         new_name = "NewUserName"
         update_data = {"name": new_name}
@@ -238,7 +217,6 @@ class TestUser:
             json_data = response.json()
             assert json_data["success"] is True
             assert json_data["user"]["name"] == new_name
-        # Очистка выполняется в фикстуре authorized_user
     
     @allure.feature("Изменение данных пользователя")
     @allure.story("Неавторизованный пользователь")
@@ -289,15 +267,11 @@ class TestUser:
         Попытка изменить email на уже существующий.
         Предусловие: два пользователя (один из фикстуры, второй создается в тесте)
         """
-        assert authorized_user["_registration_response"].status_code == 200
-        assert authorized_user["token"] is not None
-        
         token1 = authorized_user["token"]
         user2_data = generate_user_data()
         
         # Создаем второго пользователя
         response2, _ = create_user(api_client, user2_data)
-        assert response2.status_code == 200
         token2 = response2.json().get("accessToken")
         
         with allure.step("Отправить запрос на изменение email на уже существующий"):
@@ -309,5 +283,5 @@ class TestUser:
             assert response.json()["success"] is False
             assert response.json()["message"] == MSG_EMAIL_ALREADY_EXISTS
         
-        # Очистка: удаляем второго пользователя (первый удалится в фикстуре)
+        # Очистка: удаляем второго пользователя
         delete_user(api_client, token2)

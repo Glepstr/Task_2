@@ -18,22 +18,17 @@ def api_client():
 def authorized_user(api_client):
     """
     Создает авторизованного пользователя и возвращает его токен и данные.
-    ВНИМАНИЕ: фикстура НЕ содержит assert - проверки выполняются в тестах.
-    Если создание не удалось, тест сам обработает эту ситуацию.
+    Это предусловие для тестов — регистрация НЕ проверяется здесь.
     """
     user_data = generate_user_data()
     response, _ = create_user(api_client, user_data)
     
     token = response.json().get("accessToken") if response.status_code == 200 else None
     
-    # Возвращаем response в данные, чтобы тест мог проверить статус
-    result = {
+    yield {
         "user_data": user_data,
-        "token": token,
-        "_registration_response": response
+        "token": token
     }
-    
-    yield result
     
     # Очистка после теста
     if token:
